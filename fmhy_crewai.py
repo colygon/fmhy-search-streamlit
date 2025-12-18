@@ -6,6 +6,7 @@ Upgraded version with intelligent search agents
 import streamlit as st
 import os
 from crewai import Agent, Task, Crew, Process
+from crewai_tools import BraveSearchTool
 from langchain_openai import ChatOpenAI
 import requests
 import base64
@@ -37,8 +38,11 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### CrewAI Agents:")
     st.markdown("* Content Indexer Agent")
-    st.markdown("* Search Analyzer Agent")
-    st.markdown("* Results Ranker Agent")
+    st.markdown("* Search Analyzer Agent (BraveSearch)")
+    st.markdown("* Results Ranker Agent (BraveSearch)")
+    st.markdown("---")
+    st.markdown("### Tools:")
+    st.markdown("* BraveSearchTool for enhanced internet search")
 
 # API Key configuration
 openai_api_key = os.getenv("OPENAI_API_KEY", "")
@@ -217,6 +221,9 @@ def create_search_crew():
     if openai_api_key:
         llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1, api_key=openai_api_key)
 
+    # Initialize BraveSearchTool for enhanced internet search
+    brave_search = BraveSearchTool()
+
     # Agent 1: Content Indexer - Organizes and categorizes content
     content_indexer = Agent(
         role='Content Indexer',
@@ -235,9 +242,11 @@ def create_search_crew():
         goal='Analyze user search queries and identify the most relevant content matches',
         backstory="""You are a search specialist who understands user intent.
         You can interpret queries, identify synonyms, and find the most relevant
-        results even when the query doesn't exactly match the content.""",
+        results even when the query doesn't exactly match the content. You have access
+        to internet search to supplement FMHY wiki content with additional context.""",
         verbose=True,
         allow_delegation=False,
+        tools=[brave_search],
         llm=llm
     )
 
@@ -247,9 +256,11 @@ def create_search_crew():
         goal='Rank search results by relevance and present them in the most useful way',
         backstory="""You are an expert at ranking search results by relevance.
         You understand what makes a result valuable to users and can prioritize
-        exact matches, contextual relevance, and user intent.""",
+        exact matches, contextual relevance, and user intent. You can use internet
+        search to verify and enhance result quality.""",
         verbose=True,
         allow_delegation=False,
+        tools=[brave_search],
         llm=llm
     )
 
